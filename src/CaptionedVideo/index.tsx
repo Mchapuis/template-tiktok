@@ -65,18 +65,36 @@ export const CaptionedVideo: React.FC<{
     .replace(/.mkv$/, ".json")
     .replace(/.mov$/, ".json")
     .replace(/.webm$/, ".json");
-
-  const fetchSubtitles = useCallback(async () => {
-    try {
-      await loadFont();
-      const res = await fetch(subtitlesFile);
-      const data = (await res.json()) as Caption[];
-      setSubtitles(data);
-      continueRender(handle);
-    } catch (e) {
-      cancelRender(e);
-    }
-  }, [handle, subtitlesFile]);
+    const fetchSubtitles = useCallback(async () => {
+      console.log("Fetching subtitles from:", subtitlesFile);
+    
+      if (!getFileExists(subtitlesFile)) {
+        console.warn(`Subtitles file does not exist: ${subtitlesFile}`);
+        continueRender(handle); // Allow render to proceed without captions
+        return;
+      }
+    
+      try {
+        await loadFont();
+        const res = await fetch(subtitlesFile);
+    
+        if (!res.ok) {
+          throw new Error(
+            `Failed to fetch subtitles. HTTP status: ${res.status} - ${res.statusText}`
+          );
+        }
+    
+        const data = (await res.json()) as Caption[];
+        console.log("Fetched subtitles:", data);
+        setSubtitles(data);
+        continueRender(handle);
+      } catch (e) {
+        console.error("Error fetching or parsing subtitles:", e);
+        cancelRender(e);
+      }
+    }, [handle, subtitlesFile]);
+    
+    
 
   useEffect(() => {
     fetchSubtitles();
